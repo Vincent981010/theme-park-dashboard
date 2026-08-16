@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>樂園即時看板 · 迪士尼／環球影城</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F1E6;
+    --panel:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B5847;
+    --navy:#16233B;
+    --navy-soft:#223252;
+    --gold:#E4A335;
+    --gold-soft:#F3D9A8;
+    --green:#2F6B4F;
+    --green-bg:#E4EFE7;
+    --red:#B23A2E;
+    --red-bg:#F5E3E0;
+    --amber:#C97A22;
+    --amber-bg:#F5E7D2;
+    --gray:#8A8570;
+    --gray-bg:#EAE5D5;
+    --line:#DCD3BC;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--gold);
+    opacity:.9;
+  }
+  h1,h2,h3{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    letter-spacing:.01em;
+    margin:0;
+  }
+
+  /* ---- Marquee header ---- */
+  header.marquee{
+    background:var(--navy);
+    color:#F5F1E6;
+    padding:22px 18px 20px;
+    position:relative;
+    overflow:hidden;
+    border-bottom:3px solid var(--gold);
+  }
+  header.marquee::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:radial-gradient(circle, rgba(228,163,53,.55) 1.4px, transparent 1.4px);
+    background-size:16px 16px;
+    opacity:.12;
+    pointer-events:none;
+  }
+  .marquee-top{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;z-index:1;}
+  header.marquee h1{
+    font-size:20px;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    line-height:1.25;
+  }
+  header.marquee h1 span{color:var(--gold);}
+  .clock{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--gold-soft);
+    text-align:right;
+    white-space:nowrap;
+  }
+  .sub-eyebrow{margin-top:6px;font-size:12px;color:#C8CBD8;font-family:'Inter';letter-spacing:.02em;position:relative;z-index:1;}
+
+  main{max-width:820px;margin:0 auto;padding:0 14px;}
+
+  /* ---- Picker ---- */
+  .picker{padding-top:18px;}
+  .picker-group{margin-bottom:16px;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .chip{
+    border:1.5px solid var(--line);
+    background:var(--panel);
+    color:var(--ink);
+    padding:9px 14px;
+    border-radius:999px;
+    font-size:13.5px;
+    font-weight:500;
+    cursor:pointer;
+    transition:.15s;
+    font-family:'Inter';
+  }
+  .chip:hover{border-color:var(--gold);}
+  .chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .searchbox{
+    width:100%;
+    padding:11px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--panel);
+    font-size:14px;
+    font-family:'Inter';
+    margin-top:10px;
+  }
+  .searchbox:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .search-wrap{position:relative;}
+  .search-wrap .searchbox{padding-right:38px;}
+  .search-clear{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    width:26px;height:26px;border-radius:50%;border:none;background:var(--gray-bg);
+    color:var(--ink-soft);font-size:13px;cursor:pointer;line-height:1;
+  }
+  .quick-results{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .quick-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--panel);border:1.5px solid var(--gold-soft);border-radius:10px;
+    padding:10px 12px;cursor:pointer;text-align:left;
+  }
+  .quick-item:hover{border-color:var(--gold);}
+  .quick-item .qi-name{font-size:13.5px;font-weight:600;color:var(--navy);}
+  .quick-item .qi-sub{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .quick-item .qi-go{font-family:'IBM Plex Mono';font-size:11px;color:var(--gold);white-space:nowrap;}
+  .quick-empty{font-size:12.5px;color:var(--ink-soft);padding:8px 2px;}
+
+  /* ---- Park tabs ---- */
+  .park-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:14px 0 6px;}
+  .park-tab{
+    padding:8px 14px;border-radius:10px;border:1.5px solid var(--line);
+    background:var(--panel);cursor:pointer;font-size:13.5px;font-weight:600;
+    font-family:'Oswald';letter-spacing:.02em;color:var(--navy);
+  }
+  .park-tab.active{background:var(--gold);border-color:var(--gold);color:var(--navy);}
+
+  /* ---- Ticket stub header ---- */
+  .stub{
+    background:var(--panel);
+    border-radius:var(--radius);
+    border:1.5px solid var(--line);
+    margin-top:8px;
+    padding:18px;
+    position:relative;
+    box-shadow:0 1px 0 var(--line);
+  }
+  .stub-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .stub h2{font-size:19px;color:var(--navy);}
+  .status-pill{
+    font-family:'IBM Plex Mono';font-size:11.5px;font-weight:600;
+    padding:5px 10px;border-radius:999px;white-space:nowrap;letter-spacing:.03em;
+  }
+  .status-OPERATING,.status-open{background:var(--green-bg);color:var(--green);}
+  .status-CLOSED,.status-closed{background:var(--gray-bg);color:var(--gray);}
+  .status-DOWN{background:var(--red-bg);color:var(--red);}
+  .status-REFURBISHMENT{background:var(--amber-bg);color:var(--amber);}
+  .status-unknown{background:var(--gray-bg);color:var(--gray);}
+
+  .hours-board{
+    display:flex;align-items:center;gap:14px;margin-top:14px;
+    border-top:1px dashed var(--line);padding-top:14px;
+  }
+  .hours-time{
+    font-family:'IBM Plex Mono';font-weight:700;font-size:26px;
+    background:var(--navy);color:var(--gold-soft);
+    padding:6px 10px;border-radius:6px;letter-spacing:.02em;
+  }
+  .hours-arrow{color:var(--ink-soft);font-size:18px;}
+  .hours-label{font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono';letter-spacing:.05em;text-transform:uppercase;margin-top:4px;}
+
+  /* ---- View toggle ---- */
+  .view-toggle{display:flex;gap:6px;margin:16px 0 10px;}
+  .view-btn{
+    flex:1;padding:9px;border-radius:10px;border:1.5px solid var(--line);
+    background:var(--panel);font-family:'Oswald';font-size:13px;font-weight:600;
+    letter-spacing:.03em;cursor:pointer;color:var(--ink-soft);
+  }
+  .view-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+  .controls-row{display:flex;gap:8px;margin-bottom:10px;}
+  .controls-row .searchbox{margin-top:0;flex:1;}
+  .sort-btn{
+    border:1.5px solid var(--line);background:var(--panel);border-radius:10px;
+    padding:0 12px;font-family:'IBM Plex Mono';font-size:12px;cursor:pointer;color:var(--ink);
+  }
+
+  /* ---- Section ---- */
+  .section-title{
+    display:flex;align-items:center;gap:8px;margin:18px 0 8px;
+  }
+  .section-title h3{font-size:15px;color:var(--navy);text-transform:uppercase;letter-spacing:.03em;}
+  .section-count{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-soft);}
+
+  .card-list{display:flex;flex-direction:column;gap:8px;}
+  .item-row{
+    background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
+    padding:12px 14px;display:flex;align-items:center;gap:12px;
+    scroll-margin-top:16px;
+  }
+  .item-row.highlight{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft);}
+  .item-main{flex:1;min-width:0;}
+  .item-name{font-size:14.5px;font-weight:600;color:var(--ink);}
+  .item-meta{display:flex;align-items:center;gap:6px;margin-top:4px;}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .dot-OPERATING{background:var(--green);}
+  .dot-CLOSED{background:var(--gray);}
+  .dot-DOWN{background:var(--red);}
+  .dot-REFURBISHMENT{background:var(--amber);}
+  .dot-unknown{background:var(--gray);}
+  .item-status-text{font-size:12px;color:var(--ink-soft);}
+
+  .flap{
+    font-family:'IBM Plex Mono';font-weight:700;font-size:17px;
+    background:var(--navy);color:var(--gold-soft);
+    border-radius:6px;padding:7px 10px;min-width:56px;text-align:center;
+    transition:transform .25s;
+  }
+  .flap.pulse{animation:flip .4s;}
+  @keyframes flip{
+    0%{transform:rotateX(90deg);opacity:.3;}
+    100%{transform:rotateX(0deg);opacity:1;}
+  }
+  .flap-sub{font-size:9px;font-weight:500;letter-spacing:.04em;opacity:.75;display:block;margin-top:1px;}
+
+  .showtimes{display:flex;flex-wrap:wrap;gap:5px;max-width:150px;justify-content:flex-end;}
+  .showtime-chip{
+    font-family:'IBM Plex Mono';font-size:11px;background:var(--gold-soft);
+    color:var(--navy);padding:3px 7px;border-radius:6px;font-weight:600;
+  }
+
+  /* ---- Map ---- */
+  .map-wrap{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);padding:12px;}
+  .map-note{font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;line-height:1.5;}
+  svg.parkmap{width:100%;height:auto;background:#FBF8F0;border-radius:10px;border:1px solid var(--line);}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--ink-soft);}
+  .legend-item{display:flex;align-items:center;gap:5px;}
+  .legend-swatch{width:10px;height:10px;border-radius:50%;}
+
+  .empty,.loading,.error-box{
+    text-align:center;padding:30px 16px;color:var(--ink-soft);font-size:13.5px;
+  }
+  .error-box{background:var(--red-bg);color:var(--red);border-radius:12px;}
+  .retry-btn{
+    margin-top:10px;background:var(--navy);color:#fff;border:none;
+    padding:9px 16px;border-radius:8px;font-family:'Inter';font-weight:600;font-size:13px;cursor:pointer;
+  }
+  .spinner{
+    width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--gold);
+    border-radius:50%;margin:0 auto 10px;animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .refresh-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:11.5px;color:var(--ink-soft);margin-top:14px;font-family:'IBM Plex Mono';
+  }
+  .refresh-btn{
+    background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;
+    font-family:'IBM Plex Mono';font-size:11px;cursor:pointer;color:var(--ink);
+  }
+  footer{max-width:820px;margin:26px auto 0;padding:14px 14px 0;border-top:1px solid var(--line);
+    font-size:11px;color:var(--ink-soft);line-height:1.6;}
+  a{color:var(--navy);}
+  ::selection{background:var(--gold-soft);}
+</style>
+</head>
+<body>
+
+<header class="marquee">
+  <div class="marquee-top">
+    <h1>樂園即時看板<br><span>DISNEY · UNIVERSAL LIVE</span></h1>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+  <div class="sub-eyebrow">全球迪士尼樂園與環球影城 · 開關園時間、營運狀態、遊樂設施等待時間、演出時間</div>
+</header>
+
+<main>
+  <div class="picker" id="picker">
+    <div class="search-wrap">
+      <input class="searchbox" id="destSearch" placeholder="搜尋樂園或渡假區（例如：東京、奧蘭多、Epcot、大阪…）" autocomplete="off" />
+      <button class="search-clear" id="destSearchClear" style="display:none;" aria-label="清除搜尋">✕</button>
+    </div>
+    <div id="quickResults"></div>
+    <div class="picker-group">
+      <div class="eyebrow" style="color:var(--navy);">DISNEY 迪士尼</div>
+      <div class="chip-row" id="disneyChips"></div>
+    </div>
+    <div class="picker-group">
+      <div class="eyebrow" style="color:var(--navy);">UNIVERSAL 環球影城</div>
+      <div class="chip-row" id="universalChips"></div>
+    </div>
+  </div>
+
+  <div id="parkTabsWrap" style="display:none;">
+    <div class="park-tabs" id="parkTabs"></div>
+  </div>
+
+  <div id="parkContent"></div>
+</main>
+
+<footer>
+  資料來源：<a href="https://themeparks.wiki" target="_blank" rel="noopener">themeparks.wiki</a>（免費公開 API，涵蓋全球樂園即時排隊時間與營運資訊）。
+  資料由樂園營運方即時提供，可能有延遲或缺漏；示意地圖為依官方座標自動生成之相對位置圖，非官方美術地圖。
+  遊樂設施清單每 2 分鐘自動更新一次。
+</footer>
+
+<script>
+(function(){
+  const API = "https://api.themeparks.wiki/v1";
+
+  // ---- Chinese name lookup (best-effort, falls back to English) ----
+  const destNameMap = [
+    [/walt disney world/i, "美國奧蘭多．華特迪士尼世界"],
+    [/disneyland resort/i, "美國加州．迪士尼樂園渡假區"],
+    [/tokyo disney/i, "日本．東京迪士尼渡假區"],
+    [/disneyland paris/i, "法國．巴黎迪士尼樂園"],
+    [/hong kong disneyland/i, "香港迪士尼樂園"],
+    [/shanghai disney/i, "中國．上海迪士尼渡假區"],
+    [/universal orlando/i, "美國奧蘭多．環球影城渡假區"],
+    [/universal studios hollywood/i, "美國．好萊塢環球影城"],
+    [/universal studios japan/i, "日本．大阪環球影城"],
+    [/universal studios singapore/i, "新加坡環球影城"],
+    [/universal beijing/i, "中國．北京環球度假區"],
+  ];
+  const parkNameMap = [
+    [/magic kingdom/i, "神奇王國"],
+    [/epcot/i, "艾波卡特 EPCOT"],
+    [/hollywood studios/i, "好萊塢影城"],
+    [/animal kingdom/i, "動物王國"],
+    [/disney california adventure/i, "迪士尼加州冒險樂園"],
+    [/^disneyland park$/i, "迪士尼樂園"],
+    [/disneysea/i, "迪士尼海洋"],
+    [/^tokyo disneyland$/i, "東京迪士尼樂園"],
+    [/walt disney studios park/i, "華特迪士尼影城樂園"],
+    [/islands of adventure/i, "冒險島"],
+    [/universal studios florida/i, "佛羅里達環球影城"],
+    [/epic universe/i, "磅礡宇宙樂園 Epic Universe"],
+    [/universal studios$/i, "環球影城"],
+  ];
+  function zhName(name, map){
+    for(const [re, zh] of map){ if(re.test(name)) return `${zh}｜${name}`; }
+    return name;
+  }
+  const statusZh = {OPERATING:"營運中", CLOSED:"休園／今日未開放", DOWN:"暫停服務", REFURBISHMENT:"整修中"};
+
+  // ---- State ----
+  let destinations = [];
+  let currentDest = null;
+  let currentPark = null;
+  let liveMap = {};      // id -> live entry
+  let childrenMap = {};  // id -> child entity (for map coords / entityType)
+  let prevWaits = {};    // id -> previous wait time (for flip animation)
+  let currentView = "list";
+  let sortMode = "default";
+  let filterText = "";
+  let refreshTimer = null;
+
+  // ---- Clock ----
+  function tickClock(){
+    document.getElementById("clock").textContent = new Date().toLocaleTimeString('zh-TW',{hour12:false});
+  }
+  tickClock(); setInterval(tickClock, 1000);
+
+  function isoTime(iso){
+    if(!iso) return "--:--";
+    const t = iso.split("T")[1];
+    return t ? t.slice(0,5) : "--:--";
+  }
+
+  // ---- Fetch helpers ----
+  // The themeparks.wiki API does not send CORS headers for all clients, so a direct
+  // browser fetch can fail. Try direct first, then fall back to public CORS proxies.
+  function fetchWithTimeout(url, ms){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), ms);
+    return fetch(url, {signal: ctrl.signal}).finally(()=>clearTimeout(t));
+  }
+
+  async function getJSON(url){
+    const attempts = [
+      url,
+      "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
+      "https://corsproxy.io/?url=" + encodeURIComponent(url),
+    ];
+    let lastErr;
+    for(const attemptUrl of attempts){
+      try{
+        const res = await fetchWithTimeout(attemptUrl, 9000);
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        return await res.json();
+      }catch(err){
+        lastErr = err;
+      }
+    }
+    throw lastErr;
+  }
+
+  async function loadDestinations(){
+    const wrap = document.getElementById("picker");
+    document.getElementById("disneyChips").innerHTML = `<div class="loading"><div class="spinner"></div>正在讀取全球樂園清單…</div>`;
+    try{
+      const data = await getJSON(`${API}/destinations`);
+      destinations = (data.destinations||[]).filter(d => /disney|universal/i.test(d.name));
+      renderChips();
+    }catch(err){
+      document.getElementById("disneyChips").innerHTML = errorBox("無法讀取樂園清單，請確認網路連線後重試。", loadDestinations);
+    }
+  }
+
+  function errorBox(msg, retryFn){
+    const id = "retry_"+Math.random().toString(36).slice(2);
+    setTimeout(()=>{
+      const btn = document.getElementById(id);
+      if(btn) btn.onclick = retryFn;
+    },0);
+    return `<div class="error-box">${msg}<br><button class="retry-btn" id="${id}">重試</button></div>`;
+  }
+
+  // Normalize for matching: lowercase, strip spaces/punctuation so "walt disney world"
+  // and "waltdisneyworld" both match, and Chinese text is left untouched.
+  function norm(s){ return (s||"").toLowerCase().replace(/[\s'’.,-]/g,""); }
+
+  function destMatchesFilter(d, f){
+    if(!f) return true;
+    if(norm(d.name).includes(f)) return true;
+    if(norm(zhName(d.name, destNameMap)).includes(f)) return true;
+    return (d.parks||[]).some(p=>parkMatchesFilter(p, f));
+  }
+  function parkMatchesFilter(p, f){
+    if(!f) return true;
+    return norm(p.name).includes(f) || norm(zhName(p.name, parkNameMap)).includes(f);
+  }
+
+  function renderChips(filter=""){
+    const f = norm(filter);
+    const disney = destinations.filter(d=>/disney/i.test(d.name));
+    const universal = destinations.filter(d=>/universal/i.test(d.name));
+    const dEl = document.getElementById("disneyChips");
+    const uEl = document.getElementById("universalChips");
+    dEl.innerHTML = disney.filter(d=>destMatchesFilter(d,f)).map(chipHTML).join("") || `<div class="empty" style="padding:6px;">無符合結果</div>`;
+    uEl.innerHTML = universal.filter(d=>destMatchesFilter(d,f)).map(chipHTML).join("") || `<div class="empty" style="padding:6px;">無符合結果</div>`;
+    document.querySelectorAll(".chip").forEach(c=>{
+      c.onclick = () => selectDestination(c.dataset.id);
+    });
+    renderQuickResults(f);
+    document.getElementById("destSearchClear").style.display = filter ? "block" : "none";
+  }
+  function chipHTML(d){
+    const active = currentDest && currentDest.id===d.id ? "active":"";
+    return `<button class="chip ${active}" data-id="${d.id}">${zhName(d.name, destNameMap)}</button>`;
+  }
+
+  // Quick-jump results: match at the individual park level (e.g. typing "epcot" or
+  // "海洋" jumps straight into that park instead of only filtering the resort chips).
+  function renderQuickResults(f){
+    const box = document.getElementById("quickResults");
+    if(!f){ box.innerHTML = ""; return; }
+    const hits = [];
+    destinations.forEach(d=>{
+      (d.parks||[]).forEach(p=>{
+        if(parkMatchesFilter(p, f)) hits.push({dest:d, park:p});
+      });
+    });
+    if(hits.length===0){ box.innerHTML = ""; return; }
+    box.innerHTML = `<div class="quick-results">` + hits.slice(0,8).map(h=>`
+      <button class="quick-item" data-dest="${h.dest.id}" data-park="${h.park.id}">
+        <span>
+          <span class="qi-name">${zhName(h.park.name, parkNameMap)}</span>
+          <span class="qi-sub">${zhName(h.dest.name, destNameMap)}</span>
+        </span>
+        <span class="qi-go">前往 →</span>
+      </button>
+    `).join("") + `</div>`;
+    box.querySelectorAll(".quick-item").forEach(btn=>{
+      btn.onclick = ()=> selectDestination(btn.dataset.dest, btn.dataset.park);
+    });
+  }
+
+  // Debounce search input so filtering doesn't run on every keystroke while typing.
+  let searchDebounce = null;
+  document.getElementById("destSearch").addEventListener("input", e=>{
+    const val = e.target.value;
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(()=>renderChips(val), 150);
+  });
+  document.getElementById("destSearchClear").addEventListener("click", ()=>{
+    const box = document.getElementById("destSearch");
+    box.value = "";
+    box.focus();
+    renderChips("");
+  });
+
+  function selectDestination(id, jumpParkId){
+    currentDest = destinations.find(d=>d.id===id);
+    renderChips(document.getElementById("destSearch").value);
+    document.getElementById("parkTabsWrap").scrollIntoView({behavior:"smooth", block:"start"});
+    loadParksForDestination(currentDest, jumpParkId);
+  }
+
+  function isParkType(entityType){
+    return !!entityType && entityType.toUpperCase() === "PARK";
+  }
+
+  async function loadParksForDestination(dest, jumpParkId){
+    const tabsWrap = document.getElementById("parkTabsWrap");
+    const tabs = document.getElementById("parkTabs");
+    tabsWrap.style.display = "block";
+    tabs.innerHTML = "";
+    document.getElementById("parkContent").innerHTML = `<div class="loading"><div class="spinner"></div>正在讀取「${zhName(dest.name, destNameMap)}」的樂園清單…</div>`;
+
+    let parks = dest.parks || [];
+
+    // Fallback: some destinations don't list parks in /destinations, but the same
+    // data is always available by walking the destination's own children entity.
+    // (Here entityType is reliably present, so it's safe to filter on it.)
+    if(parks.length === 0){
+      try{
+        const data = await getJSON(`${API}/entity/${dest.id}/children`);
+        parks = (data.children || []).filter(p => isParkType(p.entityType));
+      }catch(err){
+        parks = [];
+      }
+    }
+
+    if(parks.length === 0){
+      tabsWrap.style.display = "none";
+      document.getElementById("parkContent").innerHTML = `<div class="empty">此度假區暫無獨立樂園資料，可能是資料來源尚未提供。<br><button class="retry-btn" id="retryParks">重試</button></div>`;
+      document.getElementById("retryParks").onclick = () => loadParksForDestination(dest, jumpParkId);
+      return;
+    }
+
+    tabs.innerHTML = parks.map(p=>`<button class="park-tab" data-id="${p.id}">${zhName(p.name, parkNameMap)}</button>`).join("");
+    tabs.querySelectorAll(".park-tab").forEach(b=> b.onclick = ()=>selectPark(parks.find(p=>p.id===b.dataset.id), b));
+    const target = (jumpParkId && parks.find(p=>p.id===jumpParkId)) || parks[0];
+    const targetBtn = tabs.querySelector(`[data-id="${target.id}"]`) || tabs.querySelector(".park-tab");
+    selectPark(target, targetBtn);
+  }
+
+  async function selectPark(park, btnEl){
+    currentPark = park;
+    document.querySelectorAll(".park-tab").forEach(b=>b.classList.remove("active"));
+    if(btnEl) btnEl.classList.add("active");
+    prevWaits = {};
+    if(refreshTimer) clearInterval(refreshTimer);
+    await renderParkShell();
+    await Promise.all([loadSchedule(), loadChildren(), loadLive()]);
+    refreshTimer = setInterval(loadLive, 120000);
+  }
+
+  function renderParkShell(){
+    document.getElementById("parkContent").innerHTML = `
+      <div class="stub" id="stub">
+        <div class="loading"><div class="spinner"></div>正在讀取「${zhName(currentPark.name, parkNameMap)}」資料…</div>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn active" id="viewListBtn">📋 遊樂設施清單</button>
+        <button class="view-btn" id="viewMapBtn">🗺️ 園區示意地圖</button>
+      </div>
+      <div id="viewArea"></div>
+    `;
+    currentView = "list";
+    document.getElementById("viewListBtn").onclick = ()=>switchView("list");
+    document.getElementById("viewMapBtn").onclick = ()=>switchView("map");
+  }
+
+  function switchView(v){
+    currentView = v;
+    document.getElementById("viewListBtn").classList.toggle("active", v==="list");
+    document.getElementById("viewMapBtn").classList.toggle("active", v==="map");
+    renderViewArea();
+  }
+
+  // ---- Schedule ----
+  async function loadSchedule(){
+    try{
+      const data = await getJSON(`${API}/entity/${currentPark.id}/schedule`);
+      const list = data.schedule || [];
+      const todayLocal = list.length ? list[0].date : null;
+      let today = list.find(s=>s.date===todayLocal && s.type==="OPERATING") || list.find(s=>s.type==="OPERATING") || list[0];
+      renderStub(today);
+    }catch(err){
+      document.getElementById("stub").innerHTML = `<h2>${zhName(currentPark.name, parkNameMap)}</h2><div class="item-status-text" style="margin-top:8px;">⚠️ 無法讀取營業時間資料</div>`;
+    }
+  }
+
+  function renderStub(sched){
+    const hasHours = sched && sched.openingTime && sched.closingTime;
+    const statusKey = hasHours ? "OPERATING" : "CLOSED";
+    document.getElementById("stub").innerHTML = `
+      <div class="stub-top">
+        <h2>${zhName(currentPark.name, parkNameMap)}</h2>
+        <span class="status-pill status-${statusKey}">${hasHours ? "今日營業" : "今日無營業資訊"}</span>
+      </div>
+      ${hasHours ? `
+      <div class="hours-board">
+        <div>
+          <div class="hours-time">${isoTime(sched.openingTime)}</div>
+          <div class="hours-label">開園</div>
+        </div>
+        <div class="hours-arrow">→</div>
+        <div>
+          <div class="hours-time">${isoTime(sched.closingTime)}</div>
+          <div class="hours-label">閉園</div>
+        </div>
+      </div>` : `<div class="item-status-text" style="margin-top:10px;">此樂園今日可能休園，或資料尚未提供。</div>`}
+    `;
+  }
+
+  // ---- Children (for map coordinates & entity metadata) ----
+  async function loadChildren(){
+    try{
+      const data = await getJSON(`${API}/entity/${currentPark.id}/children`);
+      childrenMap = {};
+      (data.children||[]).forEach(c=>{ childrenMap[c.id] = c; });
+    }catch(err){
+      childrenMap = {};
+    }
+  }
+
+  // ---- Live data ----
+  async function loadLive(){
+    try{
+      const data = await getJSON(`${API}/entity/${currentPark.id}/live`);
+      const newMap = {};
+      (data.liveData||[]).forEach(e=>{ newMap[e.id] = e; });
+      liveMap = newMap;
+      renderViewArea();
+      updateRefreshBar(true);
+    }catch(err){
+      if(!document.getElementById("viewArea").innerHTML){
+        document.getElementById("viewArea").innerHTML = errorBox("無法讀取即時排隊與營運狀態資料。", loadLive);
+      }
+      updateRefreshBar(false);
+    }
+  }
+
+  function updateRefreshBar(ok){
+    let bar = document.getElementById("refreshBar");
+    const now = new Date().toLocaleTimeString('zh-TW',{hour12:false});
+    const html = `<span>${ok?"✅":"⚠️"} 最後更新 ${now}｜每 2 分鐘自動刷新</span><button class="refresh-btn" id="manualRefresh">立即刷新</button>`;
+    if(!bar){
+      const viewArea = document.getElementById("viewArea");
+      viewArea.insertAdjacentHTML("afterend", `<div class="refresh-bar" id="refreshBar">${html}</div>`);
+    } else {
+      bar.innerHTML = html;
+    }
+    const btn = document.getElementById("manualRefresh");
+    if(btn) btn.onclick = loadLive;
+  }
+
+  function classify(entry){
+    if(!entry) return "other";
+    if(entry.showtimes && entry.showtimes.length) return "show";
+    if(entry.entityType === "ATTRACTION") return "attraction";
+    return "other";
+  }
+
+  function renderViewArea(){
+    const area = document.getElementById("viewArea");
+    const entries = Object.values(liveMap);
+    if(entries.length===0){
+      area.innerHTML = `<div class="loading"><div class="spinner"></div>正在讀取即時資料…</div>`;
+      return;
+    }
+    if(currentView==="list"){
+      renderListView(area, entries);
+    } else {
+      renderMapView(area, entries);
+    }
+  }
+
+  function renderListView(area, entries){
+    let attractions = entries.filter(e=>classify(e)==="attraction");
+    let shows = entries.filter(e=>classify(e)==="show");
+
+    const f = filterText.trim().toLowerCase();
+    if(f){
+      attractions = attractions.filter(e=>e.name.toLowerCase().includes(f));
+      shows = shows.filter(e=>e.name.toLowerCase().includes(f));
+    }
+    if(sortMode==="wait"){
+      attractions.sort((a,b)=>(waitVal(b)??-1)-(waitVal(a)??-1));
+    } else {
+      attractions.sort((a,b)=>a.name.localeCompare(b.name));
+    }
+    shows.sort((a,b)=>a.name.localeCompare(b.name));
+
+    area.innerHTML = `
+      <div class="controls-row">
+        <input class="searchbox" id="itemSearch" placeholder="搜尋設施或演出名稱…" value="${filterText.replace(/"/g,'&quot;')}"/>
+        <button class="sort-btn" id="sortBtn">${sortMode==="wait" ? "⏱ 依等待時間" : "🔤 依名稱排序"}</button>
+      </div>
+      <div class="section-title"><h3>🎢 遊樂設施</h3><span class="section-count">${attractions.length} 項</span></div>
+      <div class="card-list" id="attrList">${attractions.map(attractionRow).join("") || emptyRow("目前沒有符合的遊樂設施")}</div>
+      <div class="section-title"><h3>🎭 表演節目</h3><span class="section-count">${shows.length} 項</span></div>
+      <div class="card-list" id="showList">${shows.map(showRow).join("") || emptyRow("目前沒有符合的演出資訊")}</div>
+    `;
+    document.getElementById("itemSearch").addEventListener("input", e=>{ filterText=e.target.value; renderViewArea(); });
+    document.getElementById("sortBtn").onclick = ()=>{ sortMode = sortMode==="wait" ? "default" : "wait"; renderViewArea(); };
+
+    // flip animation for changed wait times
+    attractions.forEach(e=>{
+      const v = waitVal(e);
+      const el = document.getElementById("flap_"+e.id);
+      if(el && prevWaits[e.id]!==undefined && prevWaits[e.id]!==v){
+        el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
+      }
+      prevWaits[e.id] = v;
+    });
+  }
+
+  function emptyRow(msg){ return `<div class="empty">${msg}</div>`; }
+
+  function waitVal(e){
+    return e?.queue?.STANDBY?.waitTime ?? null;
+  }
+
+  function attractionRow(e){
+    const status = e.status || "unknown";
+    const wait = waitVal(e);
+    const waitDisplay = status!=="OPERATING" ? "—" : (wait===null ? "--" : wait);
+    return `
+      <div class="item-row" id="row_${e.id}">
+        <div class="item-main">
+          <div class="item-name">${e.name}</div>
+          <div class="item-meta"><span class="dot dot-${status}"></span><span class="item-status-text">${statusZh[status]||status}</span></div>
+        </div>
+        <div class="flap" id="flap_${e.id}">${waitDisplay}<span class="flap-sub">${status==="OPERATING" ? "分鐘" : ""}</span></div>
+      </div>
+    `;
+  }
+
+  function showRow(e){
+    const status = e.status || "unknown";
+    const times = (e.showtimes||[]).slice(0,4).map(s=>`<span class="showtime-chip">${isoTime(s.startTime)}</span>`).join("");
+    return `
+      <div class="item-row" id="row_${e.id}">
+        <div class="item-main">
+          <div class="item-name">${e.name}</div>
+          <div class="item-meta"><span class="dot dot-${status}"></span><span class="item-status-text">${statusZh[status]||status}</span></div>
+        </div>
+        <div class="showtimes">${times || '<span class="item-status-text">今日無場次</span>'}</div>
+      </div>
+    `;
+  }
+
+  // ---- Map view (schematic, generated from live GPS coordinates) ----
+  function renderMapView(area, entries){
+    const points = entries
+      .map(e=>({e, loc: childrenMap[e.id]?.location}))
+      .filter(p=>p.loc && typeof p.loc.latitude==="number" && typeof p.loc.longitude==="number");
+
+    if(points.length < 3){
+      area.innerHTML = `<div class="map-wrap"><div class="empty">此樂園目前沒有足夠的座標資料，暫時無法產生示意地圖。可切換回清單檢視即時等待時間。</div></div>`;
+      return;
+    }
+    const lats = points.map(p=>p.loc.latitude), lngs = points.map(p=>p.loc.longitude);
+    const minLat=Math.min(...lats), maxLat=Math.max(...lats);
+    const minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
+    const W=1000, H=680, pad=40;
+    function xOf(lng){ return pad + (maxLng===minLng?0.5:(lng-minLng)/(maxLng-minLng)) * (W-2*pad); }
+    function yOf(lat){ return pad + (1 - (maxLat===minLat?0.5:(lat-minLat)/(maxLat-minLat))) * (H-2*pad); }
+
+    const shapes = points.map(p=>{
+      const kind = classify(p.e);
+      const status = p.e.status || "unknown";
+      const color = status==="OPERATING" ? "var(--green)" : status==="DOWN" ? "var(--red)" : status==="REFURBISHMENT" ? "var(--amber)" : "var(--gray)";
+      const x = xOf(p.loc.longitude), y = yOf(p.loc.latitude);
+      const label = p.e.name.length>16 ? p.e.name.slice(0,15)+"…" : p.e.name;
+      const shape = kind==="show"
+        ? `<path d="M ${x} ${y-6} L ${x+6} ${y+5} L ${x-6} ${y+5} Z" fill="${color}" stroke="#fff" stroke-width="1"/>`
+        : `<circle cx="${x}" cy="${y}" r="5.5" fill="${color}" stroke="#fff" stroke-width="1.3"/>`;
+      return `<g class="mappoint" data-id="${p.e.id}" style="cursor:pointer;">
+        ${shape}
+        <text x="${x}" y="${y-9}" font-size="9" font-family="IBM Plex Mono" text-anchor="middle" fill="#3a3a30">${label}</text>
+      </g>`;
+    }).join("");
+
+    area.innerHTML = `
+      <div class="map-wrap">
+        <div class="map-note">依官方公開座標自動生成的相對位置示意圖（非官方美術地圖）。●為遊樂設施、▲為演出節目，顏色代表目前狀態。點擊圖示可在清單中定位。</div>
+        <svg class="parkmap" viewBox="0 0 ${W} ${H}">${shapes}</svg>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--green)"></span>營運中</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--red)"></span>暫停服務</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--amber)"></span>整修中</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--gray)"></span>休園／未知</div>
+        </div>
+      </div>
+    `;
+    area.querySelectorAll(".mappoint").forEach(g=>{
+      g.addEventListener("click", ()=>{
+        switchView("list");
+        setTimeout(()=>{
+          const row = document.getElementById("row_"+g.dataset.id);
+          if(row){
+            row.scrollIntoView({behavior:"smooth", block:"center"});
+            row.classList.add("highlight");
+            setTimeout(()=>row.classList.remove("highlight"), 1800);
+          }
+        }, 50);
+      });
+    });
+  }
+
+  loadDestinations();
+})();
+</script>
+</body>
+</html>
