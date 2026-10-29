@@ -4,6 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>樂園即時看板 · 迪士尼／環球影城</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16233B">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="樂園看板">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -232,6 +240,7 @@
   .dot-DOWN{background:var(--red);}
   .dot-REFURBISHMENT{background:var(--amber);}
   .dot-unknown{background:var(--gray);}
+  .dot-NO_LIVE_DATA{background:var(--gray);}
   .item-status-text{font-size:12px;color:var(--ink-soft);}
 
   .flap{
@@ -383,7 +392,7 @@
     for(const [re, zh] of map){ if(re.test(name)) return `${zh}｜${name}`; }
     return name;
   }
-  const statusZh = {OPERATING:"營運中", CLOSED:"休園／今日未開放", DOWN:"暫停服務", REFURBISHMENT:"整修中"};
+  const statusZh = {OPERATING:"營運中", CLOSED:"休園／今日未開放", DOWN:"暫停服務", REFURBISHMENT:"整修中", NO_LIVE_DATA:"無即時資料（可能需透過官方 App 領取入場資格）"};
 
   // ---- Attraction / show name translation (best-effort; not exhaustive) ----
   // Keys are normalized (symbols stripped, lowercased) English names as returned by the API.
@@ -397,72 +406,122 @@
       .toLowerCase();
   }
   const attrNameRaw = {
-    // Magic Kingdom
-    "space mountain":"太空山","big thunder mountain railroad":"雷鳴山鐵路","pirates of the caribbean":"加勒比海盜",
-    "haunted mansion":"幽靈公館","it's a small world":"小小世界","jungle cruise":"叢林巡航",
-    "seven dwarfs mine train":"七矮人礦車","peter pan's flight":"小飛俠天空之旅",
-    "under the sea journey of the little mermaid":"小美人魚海底奇遇",
-    "the many adventures of winnie the pooh":"小熊維尼歷險記","buzz lightyear's space ranger spin":"巴斯光年星際歷險",
-    "tomorrowland speedway":"明日世界賽車場","astro orbiter":"飛天旋轉椅","mad tea party":"瘋帽子的旋轉茶杯",
-    "dumbo the flying elephant":"小飛象","prince charming regal carrousel":"白馬皇家旋轉木馬",
-    "the barnstormer":"小雞農場雲霄飛車","enchanted tiki room":"魔法提基屋","country bear jamboree":"鄉村熊熊歡樂會",
-    "tiana's bayou adventure":"緹娜的沼澤大冒險",
-    // Epcot
-    "guardians of the galaxy cosmic rewind":"星際異攻隊：宇宙迴旋","test track":"試車道","spaceship earth":"地球太空船",
-    "soarin around the world":"飛越地平線","frozen ever after":"冰雪奇緣：永遠的冰雪奇緣",
-    "remy's ratatouille adventure":"料理鼠王大冒險","mission space":"宇宙任務",
-    "the seas with nemo friends":"海洋總動員","living with the land":"與大地共生",
-    "journey into imagination with figment":"想像力之旅",
-    // Hollywood Studios
-    "star wars rise of the resistance":"星際大戰：反抗軍崛起","millennium falcon smugglers run":"千年鷹號：走私任務",
-    "slinky dog dash":"抱抱龍雲霄飛車","toy story mania":"玩具總動員瘋狂遊戲屋","rock n roller coaster":"搖滾雲霄飛車",
-    "the twilight zone tower of terror":"驚魂古塔","mickey minnie's runaway railway":"米奇與米妮的瘋狂鐵路冒險",
-    "alien swirling saucers":"外星人迴轉飛碟",
-    // Animal Kingdom
-    "avatar flight of passage":"阿凡達：飛行的旅程","na'vi river journey":"納美人河流之旅",
-    "expedition everest":"珠穆朗瑪峰探險","kilimanjaro safaris":"吉力馬札羅野生動物之旅",
-    "kali river rapids":"卡莉河急流泛舟","dinosaur":"恐龍歷險記","it's tough to be a bug":"蟲蟲危機",
-    // Disneyland / DCA
-    "matterhorn bobsleds":"馬特洪山雪橇","indiana jones adventure":"印第安納瓊斯冒險",
-    "radiator springs racers":"水鄉車行賽車","guardians of the galaxy mission breakout":"星際異攻隊：極速逃脫",
-    "incredicoaster":"超人特攻隊雲霄飛車","web slingers a spider man adventure":"蜘蛛人：飛簷走壁大冒險",
-    // Tokyo Disney Resort
-    "pooh's hunny hunt":"小熊維尼獵蜜記","monsters inc ride go seek":"怪獸電力公司：迷藏巡遊",
-    "baymax happy ride":"杯麵歡樂騎乘","journey to the center of the earth":"地心探險之旅",
-    "20000 leagues under the sea":"海底二萬哩","indiana jones adventure temple of the crystal skull":"印第安納瓊斯冒險：水晶骷髏頭魔宮",
-    "soaring fantastic flight":"翱翔：夢幻奇航","tower of terror":"驚魂古塔","sindbad's storybook voyage":"辛巴達傳奇之旅",
-    // Disneyland Paris
-    "space mountain mission 2":"太空山：任務2","star wars hyperspace mountain":"星際大戰：超空間山",
-    "ratatouille the adventure":"料理鼠王大冒險",
-    // Hong Kong Disneyland
-    "mystic manor":"迷離莊園","big grizzly mountain runaway mine cars":"灰熊山失控礦車",
-    "iron man experience":"鐵甲奇俠飛行之旅","ant man and the wasp nano battle":"蟻俠與黃蜂女：纳米大战",
-    // Shanghai Disneyland
-    "tron lightcycle power run":"創：極速光輪","pirates of the caribbean battle for the sunken treasure":"加勒比海盜：沉沒寶藏之戰",
-    "soaring over the horizon":"飛躍地平線","roaring rapids":"雷鳴河漂流",
-    // Universal Orlando
-    "harry potter and the escape from gringotts":"哈利波特：古靈閣大逃脫","revenge of the mummy":"神鬼傳奇復仇記",
-    "hollywood rip ride rockit":"好萊塢瘋狂雲霄飛車","men in black alien attack":"MIB星際戰警：外星人攻擊",
-    "despicable me minion mayhem":"神偷奶爸：小小兵大暴走","fast furious supercharged":"玩命關頭：極速狂飆",
-    "the simpsons ride":"辛普森家庭雲霄飛車","harry potter and the forbidden journey":"哈利波特：禁忌之旅",
-    "hagrid's magical creatures motorbike adventure":"海格的魔法生物摩托車大冒險",
-    "jurassic world velocicoaster":"侏羅紀世界：極速殺手龍",
-    "the amazing adventures of spider man":"蜘蛛人驚魂歷險記","skull island reign of kong":"骷髏島：金剛戰役",
-    "jurassic park river adventure":"侏羅紀公園河流探險",
-    // Epic Universe
-    "stardust racers":"星塵飛車","curse of the werewolf":"狼人的詛咒",
-    "harry potter and the battle at the ministry":"哈利波特：魔法部之戰",
-    "mario kart bowser's challenge":"瑪利歐賽車：庫巴的挑戰","yoshi's adventure":"耀西大冒險",
-    // Universal Hollywood / Japan / Singapore / Beijing
-    "jurassic world the ride":"侏羅紀世界：飛越湍流","flying dinosaur":"飛天恐龍","hollywood dream the ride":"好萊塢之夢：乘車遊",
-    "space fantasy the ride":"太空幻想：乘車遊","mario kart koopa's challenge":"瑪利歐賽車：庫巴的挑戰",
-    "battlestar galactica human vs cylon":"太空堡壘卡拉狄加：人類 vs 機械人",
-    "transformers the ride":"變形金剛：全面進擊","puss in boots' giant journey":"鞋貓劍客的巨人之旅",
-    "wizarding world of harry potter hogsmeade":"哈利波特的魔法世界：活米村",
-    "jurassic world adventure":"侏羅紀世界大冒險","kung fu panda land of awesomeness":"功夫熊貓：蓋世之地",
-    // Epic Universe — Super Nintendo World / Donkey Kong Country
-    "donkey kong's mine cart madness":"咚奇剛的瘋狂礦車","mine cart madness":"咚奇剛的瘋狂礦車",
-    "mario kart bowser's challenge":"瑪利歐賽車：庫巴的挑戰",
+    // ===== Disneyland Resort, USA — Disneyland Park =====
+    "star wars rise of the resistance":"星際大戰：抵抗勢力崛起","millennium falcon smugglers run":"千年鷹號：走私者逃亡",
+    "indiana jones adventure":"印第安納瓊斯冒險","space mountain":"飛越太空山","big thunder mountain railroad":"巨雷山",
+    "haunted mansion":"幽靈公館","pirates of the caribbean":"加勒比海盜","tianas bayou adventure":"蒂安娜的河口冒險",
+    "matterhorn bobsleds":"馬特洪峰雪橇","mickey & minnies runaway railway":"米奇與米妮的極速鐵道","its a small world":"小小世界",
+    "buzz lightyear astro blasters":"巴斯光年星際探險","star tours the adventures continue":"星際旅行：冒險續航",
+    "finding nemo submarine voyage":"尋找尼莫潛水艇","jungle cruise":"叢林巡航","peter pans flight":"小飛俠天空之旅",
+    "alice in wonderland":"愛麗絲夢遊仙境","snow whites enchanted wish":"白雪公主魔法之願","pinocchios daring journey":"皮諾丘勇敢之旅",
+    "mr. toads wild ride":"蟾蜍先生的狂野之旅","dumbo the flying elephant":"小飛象旋轉世界","mad tea party":"瘋狂茶會",
+    "the many adventures of winnie the pooh":"小熊維尼歷險記","roger rabbits car toon spin":"兔子羅傑卡通轉轉車",
+    "king arthur carrousel":"亞瑟王旋轉木馬","chip n dales gadgetcoaster":"奇奇蒂蒂迷你雲霄飛車","astro orbiter":"天文軌道衛星航行","autopia":"馳車天地",
+    // ===== Disney California Adventure =====
+    "guardians of the galaxy mission breakout":"星際異攻隊：突圍任務","web slingers a spider man adventure":"蜘蛛人：蛛網探險",
+    "radiator springs racers":"水箱溫泉鎮賽車手","incredicoaster":"超人特攻隊雲霄飛車","toy story midway mania":"玩具總動員瘋狂遊戲屋",
+    "grizzly river run":"灰熊河飛艇","soarin around the world":"翱翔：飛越世界","the little mermaid ariels undersea adventure":"小美人魚：愛麗兒的海底歷險",
+    "maters junkyard jamboree":"怪物農場拖拉機","luigis rollickin roadsters":"路易吉的搖滾賽車","pixar pal a round":"皮克斯摩天輪",
+    "goofys sky school":"高飛的空中學校","inside out emotional whirlwind":"腦筋急轉彎：情緒旋轉","golden zephyr":"賽車手轉轉車",
+    "silly symphony swings":"糊塗交響樂鞦韆","jessies critter carousel":"傑西的牛仔木馬","monsters, inc. mike & sulley to the rescue":"怪獸電力公司：麥克與蘇利文救援",
+    // ===== Walt Disney World — Magic Kingdom =====
+    "tron lightcycle / run":"創極速光輪","seven dwarfs mine train":"七矮人礦車",
+    "prince charming regal carrousel":"灰姑娘旋轉木馬","the barnstormer":"穀倉風暴雲霄飛車","the magic carpets of aladdin":"阿拉丁魔毯",
+    "tomorrowland speedway":"馳車天地","tomorrowland transit authority peoplemover":"明日世界交通運輸",
+    "under the sea ~ journey of the little mermaid":"小美人魚的海底歷險","buzz lightyears space ranger spin":"巴斯光年星際探險",
+    // ===== EPCOT =====
+    "guardians of the galaxy cosmic rewind":"星際異攻隊：宇宙倒帶","remys ratatouille adventure":"雷米料理鼠王大冒險",
+    "frozen ever after":"冰雪奇緣：極光之旅","test track":"測試軌道","mission space":"太空任務","spaceship earth":"地球號宇宙飛船歷險",
+    "the seas with nemo & friends":"海洋之旅","living with the land":"與大地共存","journey into imagination with figment":"幻想世界之旅",
+    "gran fiesta tour starring the three caballeros":"墨西哥三騎士遊船",
+    // ===== Disney's Hollywood Studios =====
+    "the twilight zone tower of terror":"驚魂古塔","rock n roller coaster starring aerosmith":"搖滾雲霄飛車",
+    "slinky dog dash":"彈簧狗雲霄飛車","toy story mania":"玩具總動員瘋狂遊戲屋","alien swirling saucers":"外星人飛碟",
+    // ===== Disney's Animal Kingdom =====
+    "avatar flight of passage":"阿凡達：神經連結","navi river journey":"納美河濱之旅",
+    "expedition everest legend of the forbidden mountain":"珠穆朗瑪峰探險","kilimanjaro safaris":"吉力馬札羅草原歷險",
+    "kali river rapids":"卡利河急流","dinosaur":"恐龍","triceratop spin":"三角龍大旋轉",
+    // ===== Tokyo Disneyland =====
+    "enchanted tale of beauty and the beast":"美女與野獸：城堡奇緣","the happy ride with baymax":"杯麵歡樂之旅",
+    "big thunder mountain":"巨雷山","splash mountain":"飛濺山","monsters, inc. ride & go seek":"怪獸電力公司：迷藏巡遊車",
+    "poohs hunny hunt":"小熊維尼獵蜜記","jungle cruise wildlife expeditions":"叢林巡航","snow whites adventures":"白雪公主冒險旅程",
+    "alices tea party":"愛麗絲的午茶派對","castle carrousel":"城堡旋轉木馬","gadgets go coaster":"滿載而歸",
+    "buzz lightyears astro blasters":"巴斯光年星際歷險",
+    // ===== Tokyo DisneySea =====
+    "anna and elsas frozen journey":"安娜與艾莎的冰雪之旅","rapunzels lantern festival":"樂佩公主天燈盛會",
+    "peter pans never land adventure":"彼得潘的夢幻島歷險","fairy tinker bells busy buggies":"奇妙仙子妙妙小車",
+    "soaring fantastic flight":"翱翔：夢幻奇航","tower of terror":"驚魂古塔","journey to the center of the earth":"地心探險之旅",
+    "indiana jones adventure temple of the crystal skull":"印第安納瓊斯冒險旅程：水晶骷髏頭魔宮","20,000 leagues under the sea":"海底兩萬哩",
+    "raging spirits":"忿怒雙神","nemo & friends searider":"海底總動員：尼莫＆好友的海洋世界","aquatopia":"水上逗趣船",
+    "sindbads storybook voyage":"辛巴達傳奇之旅","jasmines flying carpets":"茉莉公主的飛天魔毯","venetian gondolas":"威尼斯貢多拉遊船",
+    "jumpin jellyfish":"轉轉水母","scuttles scooters":"史卡托的寄居蟹","flounders flying fish coaster":"小胖的飛魚雲霄飛車",
+    // ===== Disneyland Paris =====
+    "star wars hyperspace mountain":"星際大戰：飛越太空山","indiana jones and the temple of peril":"印第安納瓊斯：危險殿堂",
+    "phantom manor":"幽靈公館","buzz lightyear laser blast":"巴斯光年星際探險","blanche neige et les sept nains":"白雪公主和七個小矮人",
+    "les voyages de pinocchio":"皮諾丘勇敢之旅","mad hatters tea cups":"瘋狂茶會","le carrousel de lancelot":"蘭斯洛特旋轉木馬",
+    "le pays des contes de fées":"故事書遊船","casey jr. le petit train du cirque":"馬戲團小火車",
+    // ===== Walt Disney Studios Park (Paris) =====
+    "avengers assemble flight force":"復仇者集結：飛行特攻隊","spider man w.e.b. adventure":"蜘蛛人：蛛網探險",
+    "ratatouille the adventure":"雷米料理鼠王大冒險","crushs coaster":"阿龜雲霄飛車","rc racer":"沖天遙控車",
+    "toy soldiers parachute drop":"玩具兵團跳降傘","slinky dog zigzag spin":"彈簧狗轉轉車","cars road trip":"飛車天地",
+    "flying carpets over agrabah":"阿拉丁飛天魔毯",
+    // ===== Hong Kong Disneyland =====
+    "wandering oakens sliding sleighs":"雪嶺滑雪橇","big grizzly mountain runaway mine cars":"灰熊山極速礦車",
+    "mystic manor":"迷離大宅","iron man experience":"鐵甲奇俠飛行之旅","ant man and the wasp nano battle":"蟻俠與黃蜂女：擊戰特攻！",
+    "hyperspace mountain":"星戰極速穿梭","jungle river cruise":"森林河流之旅","toy soldier parachute drop":"玩具兵團跳降傘",
+    "slinky dog spin":"轉轉彈弓狗","mad hatter tea cups":"瘋帽子旋轉杯","cinderella carousel":"灰姑娘旋轉木馬","orbitron":"太空飛碟",
+    // ===== Shanghai Disney Resort =====
+    "zootopia hot pursuit":"瘋狂動物城：熱力追蹤","tron lightcycle power run":"創極速光輪",
+    "pirates of the caribbean battle for the sunken treasure":"加勒比海盜：沉落寶藏之戰","soaring over the horizon":"翱翔：飛越地平線",
+    "roaring rapids":"雷鳴山漂流","rexs racer":"抱抱龍沖天賽車","woodys roundup":"胡迪牛仔嘉年華",
+    "buzz lightyear planet rescue":"巴斯光年星際營救","voyage to the crystal grotto":"晶彩奇航","fantasia carousel":"幻想曲旋轉木馬",
+    "jet packs":"噴氣背包飛行器","hunny pot spin":"旋轉瘋蜜罐","explorer canoes":"探險家獨木舟",
+    // ===== Universal Studios Hollywood =====
+    "mario kart bowsers challenge":"瑪利歐賽車：庫巴的挑戰書","harry potter and the forbidden journey":"哈利波特禁忌之旅",
+    "flight of the hippogriff":"鷹馬的飛行","jurassic world the ride":"侏羅紀世界：乘船遊","revenge of the mummy the ride":"木乃伊復仇過山車",
+    "transformers the ride 3d":"變形金剛：3D飛車","the secret life of pets off the leash":"寵物當家：脫韁乘車遊",
+    "despicable me minion mayhem":"神偷奶爸：小小兵瘋狂乘車遊","the simpsons ride":"辛普森飛車","studio tour":"影城之旅","silly swirly fun ride":"傻呼呼旋轉車",
+    // ===== Universal Studios Florida =====
+    "harry potter and the escape from gringotts":"哈利波特：逃出古靈閣","hogwarts express kings cross station":"霍格華茲特快車：國王十字車站",
+    "revenge of the mummy":"木乃伊復仇過山車","illuminations villain con minion blast":"小小兵：反派萬惡連線",
+    "fast & furious supercharged":"玩命關頭：街頭狂飆","race through new york starring jimmy fallon":"吉米法倫紐約狂飆",
+    "men in black alien attack":"MIB星際戰警","e.t. adventure":"ET星際探險","kang & kodos twirl n hurl":"康與科多斯的瘋狂旋轉",
+    // ===== Universal's Islands of Adventure =====
+    "hagrids magical creatures motorbike adventure":"海格的奇獸摩托車冒險","hogwarts express hogsmeade station":"霍格華茲特快車：活米村車站",
+    "jurassic world velocicoaster":"侏羅紀世界：迅猛龍過山車","jurassic park river adventure":"侏羅紀公園河流探險",
+    "skull island reign of kong":"金剛：骷髏島","the incredible hulk coaster":"綠巨人浩克過山車",
+    "the amazing adventures of spider man":"蜘蛛人驚世冒險","doctor dooms fearfall":"末日先鋒：大破壞",
+    "popeye & blutos bilge rat barges":"大力水手泛舟","dudley do rights ripsaw falls":"急流泛舟","the cat in the hat":"戴帽子的貓",
+    "pteranodon flyers":"翼龍飛天","the high in the sky seuss trolley train ride":"高空軌道小火車",
+    "one fish, two fish, red fish, blue fish":"旋轉魚","caro seuss el":"旋轉木馬","storm force accelatron":"暴風雨部隊加速器",
+    // ===== Universal Studios Japan =====
+    "mario kart koopas challenge":"瑪利歐賽車：庫巴的挑戰書","yoshis adventure":"耀西冒險",
+    "donkey kongs crazy mine cart":"咚奇剛的瘋狂礦車","donkey kongs mine cart madness":"咚奇剛的瘋狂礦車","mine cart madness":"咚奇剛的瘋狂礦車",
+    "the flying dinosaur":"飛天翼龍","jurassic park the ride":"侏羅紀公園乘船遊","hollywood dream the ride":"好萊塢美夢乘車遊",
+    "hollywood dream the ride backdrop":"好萊塢美夢乘車遊：逆轉世界","freeze ray sliders":"冰凍雷射光乘車遊","jaws":"大白鯊",
+    "space fantasy the ride":"太空幻想列車","the flying snoopy":"飛天史努比","elmos little drive":"艾蒙小兜風",
+    "elmos bubble bubble":"艾蒙泡泡遨遊","moppys balloon trip":"莫比氣球之旅","sesames big drive":"芝麻街大車駕",
+    // ===== Universal Studios Singapore =====
+    "battlestar galactica human vs. cylon":"太空堡壘卡拉狄加：人類與機械戰龍","transformers the ride the ultimate 3d battle":"變形金剛3D對決之終極戰鬥",
+    "jurassic park rapids adventure":"侏羅紀河流探險","puss in boots giant journey":"鞋貓劍客歷險記",
+    "sesame street spaghetti space chase":"芝麻街之義大利麵太空戰","canopy flyer":"天幕飛行","treasure hunters":"尋寶奇兵",
+    "enchanted airways":"小龍飛行學校","dino soarin":"恐龍騎士","accelerator":"旋轉飛盤","magic potion spin":"魔法轉輪",
+    // ===== Universal Studios Beijing =====
+    "jurassic world adventure":"侏羅紀世界大冒險","jurassic flyers":"飛越侏羅紀","decepticon coaster":"霸天虎過山車",
+    "transformers battle for the allspark":"變形金剛：火種源爭奪戰","super swirl":"超萌漩漩渦","loop dee doop dee":"萌轉過山車",
+    "kung fu panda journey of the dragon warrior":"功夫熊貓：神龍大俠之旅","lanterns of legendary landscapes":"燈影傳奇",
+    "carousel of kung fu heroes":"炫轉武俠","bumblebee boogie":"大黃蜂迴旋機",
+    // ===== Universal Epic Universe, Orlando =====
+    // Celestial Park
+    "stardust racers":"星塵賽車手","constellation carousel":"星座旋轉木馬",
+    // Super Nintendo World
+    "mine cart madness":"咚奇剛的瘋狂礦車",
+    // The Wizarding World of Harry Potter – Ministry of Magic
+    "harry potter and the battle at the ministry":"哈利波特：魔法部大戰",
+    // How to Train Your Dragon – Isle of Berk
+    "hiccups wing gliders":"小嗝嗝的滑翔翼","dragon racers rally":"飛龍賽車手集會","fyre drill":"烈焰訓練營",
+    // Dark Universe
+    "monsters unchained the frankenstein experiment":"科學怪人實驗：怪物解禁","curse of the werewolf":"狼人之咒",
   };
   const attrNameMap = {};
   Object.keys(attrNameRaw).forEach(k => { attrNameMap[k] = attrNameRaw[k]; });
@@ -788,6 +847,7 @@
       const data = await getJSON(`${API}/entity/${currentPark.id}/children`);
       childrenMap = {};
       (data.children||[]).forEach(c=>{ childrenMap[c.id] = c; });
+      renderViewArea(); // children may finish after live data — merge in newly-known items
     }catch(err){
       childrenMap = {};
     }
@@ -808,6 +868,22 @@
       }
       updateRefreshBar(false);
     }
+  }
+
+  // Some rides never appear in the live feed at all — typically ones gated behind an
+  // official app / timed-entry system rather than a normal standby queue (e.g. Universal
+  // Studios Japan's Donkey Kong's Mine-Cart Madness). They DO still exist in the park's
+  // structural entity list though, so merge those in as "no live data" placeholders
+  // instead of only ever showing what the live feed happens to report.
+  const NO_LIVE_STATUS = "NO_LIVE_DATA";
+  function getCombinedEntries(){
+    const combined = {...liveMap};
+    Object.values(childrenMap).forEach(c=>{
+      if(!combined[c.id] && c.entityType){
+        combined[c.id] = {id:c.id, name:c.name, entityType:c.entityType, status:NO_LIVE_STATUS, queue:null, showtimes:[]};
+      }
+    });
+    return Object.values(combined);
   }
 
   function updateRefreshBar(ok){
@@ -838,7 +914,7 @@
 
   function renderViewArea(){
     const area = document.getElementById("viewArea");
-    const entries = Object.values(liveMap);
+    const entries = getCombinedEntries();
     if(entries.length===0){
       area.innerHTML = `<div class="loading"><div class="spinner"></div>正在讀取即時資料…</div>`;
       return;
@@ -853,6 +929,7 @@
       }
     }
   }
+
 
   function renderListView(area, entries){
     let attractions = entries.filter(e=>classify(e)==="attraction");
